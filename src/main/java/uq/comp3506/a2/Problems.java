@@ -11,6 +11,7 @@ import uq.comp3506.a2.structures.Tunnel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 // This is part of COMP3506 Assignment 2. Students must implement their own solutions.
 
@@ -36,7 +37,20 @@ public class Problems {
      * Note: We promise that the input List will be an ArrayList.
      */
     public static double tunnelLighting(int tunnelLength, List<Integer> lightIntervals) {
-        return -1;
+        if (lightIntervals == null || lightIntervals.isEmpty()) {
+            return -1.0; 
+        }
+        
+        ArrayList<Integer> a = new ArrayList<>(lightIntervals);
+        Collections.sort(a);
+    
+        double r = Math.max(a.get(0), tunnelLength - a.get(a.size() - 1));
+        
+        for (int i = 0; i + 1 < a.size(); i++) {
+            r = Math.max(r, (a.get(i + 1) - a.get(i)) / 2.0);
+        }
+        
+        return r; 
     }
 
     /**
