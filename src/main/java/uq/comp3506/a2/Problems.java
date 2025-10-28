@@ -327,6 +327,91 @@ public class Problems {
      */
     public static int susDomination(List<Integer> sites, List<List<List<Integer>>> rules,
                                      List<Integer> startingSites) {
-        return -1;
+        
+        final int n = (sites == null) ? 0 : sites.size();
+        if (n == 0) return 0;  
+        
+        boolean[] infil = new boolean[n];
+    
+        
+        ArrayList<ArrayList<int[]>> appears = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) appears.add(new ArrayList<>());
+    
+        
+        ArrayList<ArrayList<Integer>> remain = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) remain.add(new ArrayList<>());
+    
+        
+        int R = (rules == null) ? 0 : rules.size();
+        for (int lhs = 0; lhs < n && lhs < R; lhs++) {
+            List<List<Integer>> orGroups = rules.get(lhs);
+            ArrayList<Integer> remLhs = remain.get(lhs);
+            for (int g = 0; g < orGroups.size(); g++) {
+                List<Integer> group = orGroups.get(g);
+                
+                remLhs.add(group.size());
+                
+                for (int s : group) {
+                    appears.get(s).add(new int[]{lhs, g});
+                }
+            }
+        }
+    
+        
+        ArrayList<Integer> q = new ArrayList<>();
+        int head = 0;
+        int infiltratedCount = 0;
+    
+      
+        if (startingSites != null) {
+            for (int s : startingSites) {
+                if (s >= 0 && s < n && !infil[s]) {
+                    infil[s] = true;
+                    infiltratedCount++;
+                    q.add(s);
+                }
+            }
+        }
+    
+        
+        for (int lhs = 0; lhs < n && lhs < R; lhs++) {
+            ArrayList<Integer> remLhs = remain.get(lhs);
+            for (int g = 0; g < remLhs.size(); g++) {
+                if (remLhs.get(g) == 0 && !infil[lhs]) {
+                    infil[lhs] = true;
+                    infiltratedCount++;
+                    q.add(lhs);
+                    break; 
+                }
+            }
+        }
+    
+        
+        while (head < q.size()) {
+            int s = q.get(head++);
+    
+            for (int[] pair : appears.get(s)) {
+                int lhs = pair[0], g = pair[1];
+                if (lhs < 0 || lhs >= n) continue;
+                ArrayList<Integer> remLhs = remain.get(lhs);
+                
+                if (g < 0 || g >= remLhs.size()) continue;
+    
+                int newRem = remLhs.get(g) - 1;
+                remLhs.set(g, newRem);
+    
+                if (newRem == 0 && !infil[lhs]) {
+                    infil[lhs] = true;
+                    infiltratedCount++;
+                    q.add(lhs);
+                }
+            }
+        }
+        
+        
+    
+        
+        return n - infiltratedCount;
     }
+
 }
