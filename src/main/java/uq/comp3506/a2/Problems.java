@@ -328,90 +328,105 @@ public class Problems {
     public static int susDomination(List<Integer> sites, List<List<List<Integer>>> rules,
                                      List<Integer> startingSites) {
         
-        final int n = (sites == null) ? 0 : sites.size();
-        if (n == 0) return 0;  
         
-        boolean[] infil = new boolean[n];
+        if (sites == null || sites.isEmpty()) return 0;
+        final int n = sites.size();
+    
+       
+        int maxId = 0;
+        for (int id : sites) if (id > maxId) maxId = id;
+        if (rules != null) {
+            maxId = Math.max(maxId, rules.size() - 1);
+            for (int lhs = 0; lhs < rules.size(); lhs++) {
+                List<List<Integer>> gs = rules.get(lhs);
+                if (gs == null) continue;
+                for (List<Integer> g : gs) {
+                    if (g == null) continue;
+                    for (int id : g) if (id > maxId) maxId = id;
+                }
+            }
+        }
+        int[] id2idx = new int[maxId + 1];
+        for (int i = 0; i <= maxId; i++) id2idx[i] = -1;
+        for (int i = 0; i < n; i++) id2idx[sites.get(i)] = i;
     
         
         ArrayList<ArrayList<int[]>> appears = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) appears.add(new ArrayList<>());
-    
-        
         ArrayList<ArrayList<Integer>> remain = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) remain.add(new ArrayList<>());
+        for (int i = 0; i < n; i++) { appears.add(new ArrayList<>()); remain.add(new ArrayList<>()); }
     
-        
-        int R = (rules == null) ? 0 : rules.size();
-        for (int lhs = 0; lhs < n && lhs < R; lhs++) {
-            List<List<Integer>> orGroups = rules.get(lhs);
-            ArrayList<Integer> remLhs = remain.get(lhs);
-            for (int g = 0; g < orGroups.size(); g++) {
-                List<Integer> group = orGroups.get(g);
-                
-                remLhs.add(group.size());
-                
-                for (int s : group) {
-                    appears.get(s).add(new int[]{lhs, g});
+        if (rules != null) {
+            for (int lhsId = 0; lhsId < rules.size(); lhsId++) {
+                int lhsIdx = (lhsId <= maxId) ? id2idx[lhsId] : -1;   
+                if (lhsIdx == -1) continue;                          
+                List<List<Integer>> orGroups = rules.get(lhsId);
+                if (orGroups == null) continue;
+    
+                ArrayList<Integer> remLhs = remain.get(lhsIdx);
+                for (int g = 0; g < orGroups.size(); g++) {
+                    List<Integer> group = orGroups.get(g);
+                    if (group == null || group.isEmpty()) {
+                        remLhs.add(0);        
+                        continue;
+                    }
+                    boolean impossible = false;
+                    int need = 0;
+                    for (int id : group) {
+                        int idx = (id <= maxId) ? id2idx[id] : -1;
+                        if (idx == -1) {     
+                            impossible = true;
+                        } else {
+                            appears.get(idx).add(new int[]{lhsIdx, g});
+                            need++;
+                        }
+                    }
+                    remLhs.add(impossible ? Integer.MAX_VALUE / 4 : need);
                 }
             }
         }
     
         
+        boolean[] infil = new boolean[n];
         ArrayList<Integer> q = new ArrayList<>();
-        int head = 0;
-        int infiltratedCount = 0;
+        int head = 0, infiltrated = 0;
     
-      
+       
         if (startingSites != null) {
-            for (int s : startingSites) {
-                if (s >= 0 && s < n && !infil[s]) {
-                    infil[s] = true;
-                    infiltratedCount++;
-                    q.add(s);
-                }
+            for (int id : startingSites) {
+                int idx = (id >= 0 && id <= maxId) ? id2idx[id] : -1;
+                if (idx != -1 && !infil[idx]) { infil[idx] = true; infiltrated++; q.add(idx); }
             }
         }
     
         
-        for (int lhs = 0; lhs < n && lhs < R; lhs++) {
-            ArrayList<Integer> remLhs = remain.get(lhs);
+        for (int lhsIdx = 0; lhsIdx < n; lhsIdx++) {
+            ArrayList<Integer> remLhs = remain.get(lhsIdx);
             for (int g = 0; g < remLhs.size(); g++) {
-                if (remLhs.get(g) == 0 && !infil[lhs]) {
-                    infil[lhs] = true;
-                    infiltratedCount++;
-                    q.add(lhs);
-                    break; 
+                if (remLhs.get(g) == 0 && !infil[lhsIdx]) {
+                    infil[lhsIdx] = true; infiltrated++; q.add(lhsIdx);
+                    break;
                 }
             }
         }
     
         
         while (head < q.size()) {
-            int s = q.get(head++);
-    
-            for (int[] pair : appears.get(s)) {
-                int lhs = pair[0], g = pair[1];
-                if (lhs < 0 || lhs >= n) continue;
-                ArrayList<Integer> remLhs = remain.get(lhs);
-                
+            int sIdx = q.get(head++);
+            for (int[] pair : appears.get(sIdx)) {
+                int lhsIdx = pair[0], g = pair[1];
+                ArrayList<Integer> remLhs = remain.get(lhsIdx);
                 if (g < 0 || g >= remLhs.size()) continue;
-    
-                int newRem = remLhs.get(g) - 1;
+                int cur = remLhs.get(g);
+                if (cur == Integer.MAX_VALUE / 4) continue; 
+                int newRem = cur - 1;
                 remLhs.set(g, newRem);
-    
-                if (newRem == 0 && !infil[lhs]) {
-                    infil[lhs] = true;
-                    infiltratedCount++;
-                    q.add(lhs);
+                if (newRem == 0 && !infil[lhsIdx]) {
+                    infil[lhsIdx] = true; infiltrated++; q.add(lhsIdx);
                 }
             }
         }
-        
-        
     
-        
-        return n - infiltratedCount;
+        return n - infiltrated;   
     }
 
 }
