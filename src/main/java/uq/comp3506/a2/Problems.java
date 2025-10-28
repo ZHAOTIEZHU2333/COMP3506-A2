@@ -8,6 +8,7 @@ import uq.comp3506.a2.structures.Vertex;
 import uq.comp3506.a2.structures.Entry;
 import uq.comp3506.a2.structures.TopologyType;
 import uq.comp3506.a2.structures.Tunnel;
+import uq.comp3506.a2.structures.Heap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,6 +139,7 @@ public class Problems {
         }
         verts.add(x);
         return verts.size() - 1;
+        
     }
  
     /**
@@ -156,8 +158,84 @@ public class Problems {
      */
     public static <S, U> List<Entry<Integer, Integer>> routeManagement(List<Edge<S, U>> edgeList,
                                                           Vertex<S> origin, int threshold) {
+
         ArrayList<Entry<Integer, Integer>> answers = new ArrayList<>();
+
+
+        ArrayList<Vertex<S>> verts = new ArrayList<>();
+        if (edgeList != null) {
+            for (Edge<S, U> e : edgeList) {
+                indexOfOrAdd(verts, e.getVertex1());
+                indexOfOrAdd(verts, e.getVertex2());
+            }
+        }
+ 
+        int src = indexOfOrAdd(verts, origin);
+        int n = verts.size();
+    
+        ArrayList<ArrayList<Entry<Integer, Integer>>> adj = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) adj.add(new ArrayList<>());
+    
+        if (edgeList != null) {
+            for (Edge<S, U> e : edgeList) {
+                int u = indexOfOrAdd(verts, e.getVertex1());
+                int v = indexOfOrAdd(verts, e.getVertex2());
+    
+              
+                int w;
+                Object val = e.getData();
+                if (val instanceof Number) {
+                    w = ((Number) val).intValue();
+                } else {
+                    throw new IllegalArgumentException("Edge weight must be numeric minutes.");
+                }
+    
+                // 无向：双向加边
+                adj.get(u).add(new Entry<>(v, w));
+                adj.get(v).add(new Entry<>(u, w));
+            }
+        }
+    
+        
+        final int INF = Integer.MAX_VALUE / 4;
+        int[] dist = new int[n];
+        boolean[] vis = new boolean[n];
+        for (int i = 0; i < n; i++) dist[i] = INF;
+        dist[src] = 0;
+    
+        Heap<Integer, Integer> pq = new Heap<>();
+        pq.insert(0, src);
+    
+        while (!pq.isEmpty()) {
+            Entry<Integer, Integer> cur = pq.removeMin();
+            int d = cur.getKey();
+            int u = cur.getValue();
+            if (vis[u]) continue;
+            if (d > threshold) break;
+            vis[u] = true;
+                    
+    
+            for (Entry<Integer, Integer> e : adj.get(u)) {
+                int v = e.getKey();
+                int w = e.getValue();
+                int nd = d + w;
+                if (nd < dist[v] && nd <= threshold) {
+                    dist[v] = nd;
+                    pq.insert(nd, v);       
+                }
+            }
+        }
+    
+        
+        for (int i = 0; i < n; i++) {
+            if (dist[i] != INF && dist[i] <= threshold && vis[i]) {
+               
+                int id = ((Integer) verts.get(i).getId());   
+                answers.add(new Entry<>(id, dist[i]));
+            }
+        }
         return answers;
+        
     }
 
     /**
