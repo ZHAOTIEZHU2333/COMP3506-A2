@@ -190,7 +190,7 @@ public class Problems {
                     throw new IllegalArgumentException("Edge weight must be numeric minutes.");
                 }
     
-                // 无向：双向加边
+                
                 adj.get(u).add(new Entry<>(v, w));
                 adj.get(v).add(new Entry<>(u, w));
             }
@@ -250,7 +250,67 @@ public class Problems {
      * range [0, n-1] for n unique tunnels.
      */
     public static int totallyFlooded(List<Tunnel> tunnels) {
-        return -1;
+        if (tunnels == null || tunnels.isEmpty()) return -1;
+    
+        final double EPS = 1e-6;
+        final int n = tunnels.size();
+    
+        
+        double[] X = new double[n];
+        double[] Y = new double[n];
+        double[] R = new double[n];
+        for (Tunnel t : tunnels) {
+            int id = t.getId();         
+            X[id] = t.getX();            
+            Y[id] = t.getY();
+            R[id] = t.getRadius();       
+        }
+    
+        
+        java.util.ArrayList<java.util.ArrayList<Integer>> adj = new java.util.ArrayList<>(n);
+        for (int i = 0; i < n; i++) adj.add(new java.util.ArrayList<>());
+        for (int i = 0; i < n; i++) {
+            double reach = R[i] + EPS;
+            double reach2 = reach * reach;               
+            for (int j = 0; j < n; j++) {
+                if (i == j) continue;
+                double dx = X[i] - X[j];
+                double dy = Y[i] - Y[j];
+                double d2 = dx * dx + dy * dy;
+                if (d2 < reach2) adj.get(i).add(j);
+            }
+        }
+    
+       
+        int bestId = 0, bestCnt = -1;
+        boolean[] vis = new boolean[n];
+        java.util.ArrayList<Integer> stack = new java.util.ArrayList<>();
+    
+        for (int s = 0; s < n; s++) {
+           
+            for (int k = 0; k < n; k++) vis[k] = false;
+    
+            stack.clear();
+            stack.add(s);
+            int cnt = 0;
+    
+            while (!stack.isEmpty()) {
+                int u = stack.remove(stack.size() - 1);
+                if (vis[u]) continue;
+                vis[u] = true;
+                if (u != s) cnt++;                    
+                for (int v : adj.get(u)) {
+                    if (!vis[v]) stack.add(v);
+                }
+            }
+    
+            if (cnt > bestCnt || (cnt == bestCnt && s < bestId)) {
+                bestCnt = cnt;
+                bestId = s;
+            }
+        }
+    
+        return bestId;
     }
 
     /**
