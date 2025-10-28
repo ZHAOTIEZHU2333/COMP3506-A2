@@ -128,11 +128,11 @@ public class OrderedMap<K extends Comparable<K>, V> implements MapInterface<K, V
     @Override
     public V put(K key, V value) {
         MutationResult<Node<K, V>, V> ret = insert(root, key, value);
-        root = ret.newNode;
-        if (ret.oldValue == null) {
-            size++;
+        root = ret.newNode();          
+        if (ret.oldValue() == null) {  
+        size++;
         }
-        return ret.oldValue;
+        return ret.oldValue();
     }
 
     /** get the value associated with a key, null if it is not found */
@@ -149,11 +149,11 @@ public class OrderedMap<K extends Comparable<K>, V> implements MapInterface<K, V
     @Override
     public V remove(K key) {
         MutationResult<Node<K, V>, V> ret = delete(root, key);
-        root =  ret.newNode;
-        if (ret.oldValue != null) {
-            size--;
+        root = ret.newNode();          
+        if (ret.oldValue() != null) {  
+        size--;
         }
-        return ret.oldValue;
+        return ret.oldValue(); 
     }
 
     // OrderedMap specific functionality; this is why we need ordered maps
@@ -163,25 +163,50 @@ public class OrderedMap<K extends Comparable<K>, V> implements MapInterface<K, V
      * equal to `key`
      */
     public V nextGeq(K key) {
-        // Implement me!
-        return null;
+        Node<K, V> cur = root;
+        Node<K, V> cand = null; 
+        while (cur != null) {
+            int cmp = key.compareTo(cur.getKey());
+            if (cmp == 0) return cur.getValue();
+            if (cmp < 0) {      
+                cand = cur;
+                cur = cur.getLeft();
+            } else {            
+                cur = cur.getRight();
+            }
+        }
+        return cand == null ? null : cand.getValue();
     }
 
     /** Returns the value associated with the largest key less than or
      * equal to `key`
      */
     public V nextLeq(K key) {
-        // Implement me!
-        return null;
+        Node<K, V> cur = root;
+        Node<K, V> cand = null; 
+        while (cur != null) {
+            int cmp = key.compareTo(cur.getKey());
+            if (cmp == 0) return cur.getValue();
+            if (cmp > 0) {      
+                cand = cur;
+                cur = cur.getRight();
+            } else {            
+                cur = cur.getLeft();
+            }
+        }
+        return cand == null ? null : cand.getValue();
     }
 
 
     /** Returns a SORTED list of keys in the range [lo, hi]*/
     public List<K> keysInRange(K lo, K hi) {
         ArrayList<K> result = new ArrayList<>();
-        // Implement me!
+        keysInRange(root, lo, hi, result);
         return result;
     }
+    
+  
+    
 
     /* All of the AVL Tree helpers are below; they are all private because a
        user of an ordered map doesn't need to know or care about them. */
@@ -241,11 +266,15 @@ public class OrderedMap<K extends Comparable<K>, V> implements MapInterface<K, V
 
     /** The mirror of the rotateRight shown above */
     private Node<K, V> rotateLeft(Node<K, V> x) {
-        // uh oh... implement me!
-        // you can do it without AI, I believe in you
-        // make Barry proud
-        return x; // This will NOT work
+        Node<K, V> y = x.getRight();
+        Node<K, V> heavySubtree = y.getLeft(); 
+        y.setLeft(x);
+        x.setRight(heavySubtree);
+        updateHeight(x);
+        updateHeight(y);
+        return y;
     }
+
 
     /** Does the heavy lifting of the balancing */
     private Node<K, V> balance(Node<K, V> node) {
@@ -320,12 +349,12 @@ public class OrderedMap<K extends Comparable<K>, V> implements MapInterface<K, V
             // Recurse to the left subtree.
             MutationResult<Node<K, V>, V> leftResult = delete(node.getLeft(), key);
             node.setLeft(leftResult.newNode);
-            return new MutationResult<>(balance(node), leftResult.oldValue);
+            return new MutationResult<>(balance(node), leftResult.oldValue());
         } else if (cmp > 0) {
             // Recurse to the right subtree.
             MutationResult<Node<K, V>, V> rightResult = delete(node.getRight(), key);
             node.setRight(rightResult.newNode);
-            return new MutationResult<>(balance(node), rightResult.oldValue);
+            return new MutationResult<>(balance(node), rightResult.oldValue());
         } else {
             // We found the key :D
             V oldValue = node.getValue();
@@ -360,6 +389,22 @@ public class OrderedMap<K extends Comparable<K>, V> implements MapInterface<K, V
     }
 
     // you probably need more helpers here
+    private void keysInRange(Node<K, V> node, K lo, K hi, ArrayList<K> out) {
+        if (node == null) return;
+       
+        if (lo.compareTo(node.getKey()) < 0) {
+            keysInRange(node.getLeft(), lo, hi, out);
+        }
+       
+        if (lo.compareTo(node.getKey()) <= 0 && node.getKey().compareTo(hi) <= 0) {
+            out.add(node.getKey());
+        }
+       
+        if (node.getKey().compareTo(hi) < 0) {
+            keysInRange(node.getRight(), lo, hi, out);
+        }
+    }
+
 
 
 }
