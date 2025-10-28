@@ -63,8 +63,81 @@ public class Problems {
      * vertices.
      */
     public static <S, U> TopologyType topologyDetection(List<Edge<S, U>> edgeList) {
-        TopologyType dummy = TopologyType.UNKNOWN;
-        return dummy;
+        if (edgeList == null || edgeList.isEmpty()) {
+            return TopologyType.UNKNOWN;
+        }
+        
+        
+        ArrayList<Vertex<S>> verts = new ArrayList<>();
+        for (Edge<S, U> e : edgeList) {
+            indexOfOrAdd(verts, e.getVertex1());
+            indexOfOrAdd(verts, e.getVertex2());
+        }
+        int n = verts.size();
+        if (n == 0) return TopologyType.UNKNOWN;
+        
+        
+        ArrayList<ArrayList<Integer>> adj = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) adj.add(new ArrayList<>());
+        for (Edge<S, U> e : edgeList) {
+            int u = indexOfOrAdd(verts, e.getVertex1());
+            int v = indexOfOrAdd(verts, e.getVertex2());
+            adj.get(u).add(v);
+            adj.get(v).add(u);
+        }
+        
+        
+        boolean[] vis = new boolean[n];
+        int components = 0, treeComps = 0, cyclicComps = 0;
+        ArrayList<Integer> stack = new ArrayList<>();
+        
+        for (int s = 0; s < n; s++) {
+            if (vis[s]) continue;
+            components++;
+        
+            stack.clear();
+            stack.add(s);
+            int nodes = 0;
+            long degreeSum = 0;
+        
+            while (!stack.isEmpty()) {
+                int i = stack.remove(stack.size() - 1);
+                if (vis[i]) continue;
+                vis[i] = true;
+                nodes++;
+                ArrayList<Integer> neigh = adj.get(i);
+                degreeSum += neigh.size();
+                for (int nb : neigh) {
+                    if (!vis[nb]) stack.add(nb);
+                }
+            }
+            long edges = degreeSum / 2;
+            if (edges == nodes - 1) {
+                treeComps++;
+            } else {
+                cyclicComps++;
+            }
+        }
+        
+       
+        if (components == 1) {
+           
+            return (treeComps == 1) ? TopologyType.CONNECTED_TREE
+                                    : TopologyType.CONNECTED_GRAPH;
+        } else {
+            
+            if (cyclicComps == 0) return TopologyType.FOREST;
+            if (treeComps == 0)   return TopologyType.DISCONNECTED_GRAPH;
+            return TopologyType.HYBRID;
+        }
+    }
+
+    private static <S> int indexOfOrAdd(ArrayList<Vertex<S>> verts, Vertex<S> x) {
+        for (int i = 0; i < verts.size(); i++) {
+            if (verts.get(i).equals(x)) return i;
+        }
+        verts.add(x);
+        return verts.size() - 1;
     }
  
     /**
