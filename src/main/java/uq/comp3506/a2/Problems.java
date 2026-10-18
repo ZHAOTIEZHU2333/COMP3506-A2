@@ -185,89 +185,89 @@ public class Problems {
      * @param edgeList the edges that make up the graph
      * @return the graph's topology type
      */
-        public static <S, U> TopologyType topologyDetection(List<Edge<S, U>> edgeList) {
-            if (edgeList.isEmpty()) {
-                return TopologyType.UNKNOWN;
-            }
-    
-            HashMap<Integer, Integer> indices = new HashMap<>();
-    
-            for (Edge<S, U> edge : edgeList) {
-                int first = edge.getVertex1().getId();
-                int second = edge.getVertex2().getId();
-    
-                if (!indices.containsKey(first)) {
-                    indices.put(first, indices.size());
-                }
-    
-                if (!indices.containsKey(second)) {
-                    indices.put(second, indices.size());
-                }
-            }
-    
-            int count = indices.size();
-            int[] parent = new int[count];
-            int[] componentSize = new int[count];
-            boolean[] cyclic = new boolean[count];
-    
-            for (int i = 0; i < count; i++) {
-                parent[i] = i;
-                componentSize[i] = 1;
-            }
-    
-            for (Edge<S, U> edge : edgeList) {
-                int first = indices.get(edge.getVertex1().getId());
-                int second = indices.get(edge.getVertex2().getId());
-    
-                int rootA = findRoot(parent, first);
-                int rootB = findRoot(parent, second);
-    
-                if (rootA == rootB) {
-                    cyclic[rootA] = true;
-                } else {
-                    if (componentSize[rootA] < componentSize[rootB]) {
-                        int temporary = rootA;
-                        rootA = rootB;
-                        rootB = temporary;
-                    }
-    
-                    parent[rootB] = rootA;
-                    componentSize[rootA] += componentSize[rootB];
-                    cyclic[rootA] = cyclic[rootA] || cyclic[rootB];
-                }
-            }
-    
-            int components = 0;
-            int cyclicComponents = 0;
-    
-            for (int i = 0; i < count; i++) {
-                if (parent[i] == i) {
-                    components++;
-    
-                    if (cyclic[i]) {
-                        cyclicComponents++;
-                    }
-                }
-            }
-    
-            if (components == 1) {
-                if (cyclicComponents == 0) {
-                    return TopologyType.CONNECTED_CONFIDENT;
-                }
-    
-                return TopologyType.CONNECTED_CONFUSING;
-            }
-    
-            if (cyclicComponents == 0) {
-                return TopologyType.DISCONNECTED_CONFIDENT;
-            }
-    
-            if (cyclicComponents == components) {
-                return TopologyType.DISCONNECTED_CONFUSING;
-            }
-    
-            return TopologyType.HYBRID;
+    public static <S, U> TopologyType topologyDetection(List<Edge<S, U>> edgeList) {
+        if (edgeList.isEmpty()) {
+            return TopologyType.UNKNOWN;
         }
+
+        HashMap<Integer, Integer> indices = new HashMap<>();
+
+        for (Edge<S, U> edge : edgeList) {
+            int first = edge.getVertex1().getId();
+            int second = edge.getVertex2().getId();
+
+            if (!indices.containsKey(first)) {
+                indices.put(first, indices.size());
+            }
+
+            if (!indices.containsKey(second)) {
+                indices.put(second, indices.size());
+            }
+        }
+
+        int count = indices.size();
+        int[] parent = new int[count];
+        int[] componentSize = new int[count];
+        boolean[] cyclic = new boolean[count];
+
+        for (int i = 0; i < count; i++) {
+            parent[i] = i;
+            componentSize[i] = 1;
+        }
+
+        for (Edge<S, U> edge : edgeList) {
+            int first = indices.get(edge.getVertex1().getId());
+            int second = indices.get(edge.getVertex2().getId());
+
+            int rootA = findRoot(parent, first);
+            int rootB = findRoot(parent, second);
+
+            if (rootA == rootB) {
+                cyclic[rootA] = true;
+            } else {
+                if (componentSize[rootA] < componentSize[rootB]) {
+                    int temporary = rootA;
+                    rootA = rootB;
+                    rootB = temporary;
+                }
+
+                parent[rootB] = rootA;
+                componentSize[rootA] += componentSize[rootB];
+                cyclic[rootA] = cyclic[rootA] || cyclic[rootB];
+            }
+        }
+
+        int components = 0;
+        int cyclicComponents = 0;
+
+        for (int i = 0; i < count; i++) {
+            if (parent[i] == i) {
+                components++;
+
+                if (cyclic[i]) {
+                    cyclicComponents++;
+                }
+            }
+        }
+
+        if (components == 1) {
+            if (cyclicComponents == 0) {
+                return TopologyType.CONNECTED_CONFIDENT;
+            }
+
+            return TopologyType.CONNECTED_CONFUSING;
+        }
+
+        if (cyclicComponents == 0) {
+            return TopologyType.DISCONNECTED_CONFIDENT;
+        }
+
+        if (cyclicComponents == components) {
+            return TopologyType.DISCONNECTED_CONFUSING;
+        }
+
+        return TopologyType.HYBRID;
+    }
 
 
 
