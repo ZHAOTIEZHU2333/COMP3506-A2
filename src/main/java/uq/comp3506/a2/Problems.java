@@ -11,8 +11,11 @@ import uq.comp3506.a2.structures.UnorderedMap;
 import uq.comp3506.a2.structures.Heap;
 
 
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.HashMap;
 
 // This is part of COMP3506 Assignment 2. Students must implement their own solutions.
 
@@ -41,7 +44,23 @@ public class Problems {
     public static long cantEven(Long[] numbers) {
         // This is just a placeholder.
         // Modify this method as you wish
-        return -1;
+        HashSet<Long> oddNumbers = new HashSet<>();
+
+        for (Long number : numbers) {
+            if (!oddNumbers.add(number)) {
+                oddNumbers.remove(number);
+            }
+        }
+
+        long largest = -1;
+
+        for (long number : oddNumbers) {
+            if (number > largest) {
+                largest = number;
+            }
+        }
+
+        return largest;
     }
 
 
@@ -66,7 +85,58 @@ public class Problems {
     public static long firstVisited(String commands) {
         // This is just a placeholder.
         // Modify this method as you wish
+        HashSet<Long> visited = new HashSet<>();
+        int x = 0;
+        int y = 0;
+
+        visited.add(positionKey(x, y));
+
+        for (int i = 0; i < commands.length(); i++) {
+            char command = commands.charAt(i);
+
+            switch (command) {
+                case 'U':
+                    y++;
+                    break;
+                case 'D':
+                    y--;
+                    break;
+                case 'L':
+                    x--;
+                    break;
+                case 'R':
+                    x++;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid command");
+            }
+
+            if (!visited.add(positionKey(x, y))) {
+                return i;
+            }
+        }
+
         return -1;
+    }
+
+
+    /**
+     * Encodes a coordinate pair and mixes its bits for hash distribution.
+     *
+     * @param x the horizontal coordinate
+     * @param y the vertical coordinate
+     * @return a unique encoded position
+     */
+    private static long positionKey(int x, int y) {
+        long key = ((long) x << 32) | (y & 0xffffffffL);
+
+        key ^= key >>> 30;
+        key *= 0xbf58476d1ce4e5b9L;
+        key ^= key >>> 27;
+        key *= 0x94d049bb133111ebL;
+        key ^= key >>> 31;
+
+        return key;
     }
 
     /**
@@ -115,10 +185,118 @@ public class Problems {
      * @param edgeList the edges that make up the graph
      * @return the graph's topology type
      */
-    public static <S, U> TopologyType topologyDetection(List<Edge<S, U>> edgeList) {
-        TopologyType dummy = TopologyType.UNKNOWN;
-        return dummy;
+        public static <S, U> TopologyType topologyDetection(List<Edge<S, U>> edgeList) {
+            if (edgeList.isEmpty()) {
+                return TopologyType.UNKNOWN;
+            }
+    
+            HashMap<Integer, Integer> indices = new HashMap<>();
+    
+            for (Edge<S, U> edge : edgeList) {
+                int first = edge.getVertex1().getId();
+                int second = edge.getVertex2().getId();
+    
+                if (!indices.containsKey(first)) {
+                    indices.put(first, indices.size());
+                }
+    
+                if (!indices.containsKey(second)) {
+                    indices.put(second, indices.size());
+                }
+            }
+    
+            int count = indices.size();
+            int[] parent = new int[count];
+            int[] componentSize = new int[count];
+            boolean[] cyclic = new boolean[count];
+    
+            for (int i = 0; i < count; i++) {
+                parent[i] = i;
+                componentSize[i] = 1;
+            }
+    
+            for (Edge<S, U> edge : edgeList) {
+                int first = indices.get(edge.getVertex1().getId());
+                int second = indices.get(edge.getVertex2().getId());
+    
+                int rootA = findRoot(parent, first);
+                int rootB = findRoot(parent, second);
+    
+                if (rootA == rootB) {
+                    cyclic[rootA] = true;
+                } else {
+                    if (componentSize[rootA] < componentSize[rootB]) {
+                        int temporary = rootA;
+                        rootA = rootB;
+                        rootB = temporary;
+                    }
+    
+                    parent[rootB] = rootA;
+                    componentSize[rootA] += componentSize[rootB];
+                    cyclic[rootA] = cyclic[rootA] || cyclic[rootB];
+                }
+            }
+    
+            int components = 0;
+            int cyclicComponents = 0;
+    
+            for (int i = 0; i < count; i++) {
+                if (parent[i] == i) {
+                    components++;
+    
+                    if (cyclic[i]) {
+                        cyclicComponents++;
+                    }
+                }
+            }
+    
+            if (components == 1) {
+                if (cyclicComponents == 0) {
+                    return TopologyType.CONNECTED_CONFIDENT;
+                }
+    
+                return TopologyType.CONNECTED_CONFUSING;
+            }
+    
+            if (cyclicComponents == 0) {
+                return TopologyType.DISCONNECTED_CONFIDENT;
+            }
+    
+            if (cyclicComponents == components) {
+                return TopologyType.DISCONNECTED_CONFUSING;
+            }
+    
+            return TopologyType.HYBRID;
+        }
+
+
+
+    /**
+     * Finds a component root and compresses the traversed path.
+     *
+     * @param parent the disjoint-set parent array
+     * @param node the starting node
+     * @return the root of the component
+     */
+    private static int findRoot(int[] parent, int node) {
+        int root = node;
+
+        while (parent[root] != root) {
+            root = parent[root];
+        }
+
+        int current = node;
+
+        while (current != root) {
+            int next = parent[current];
+            parent[current] = root;
+            current = next;
+        }
+
+        return root;
     }
+
+
 
     /**
      * Finds and submits a longest path through a hidden directed acyclic graph.

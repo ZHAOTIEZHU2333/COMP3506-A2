@@ -1,5 +1,7 @@
 // @edu:student-assignment
 
+
+
 package uq.comp3506.a2.structures;
 
 /**
